@@ -9,7 +9,7 @@ async function checaStatus (listaURLs) {
   .all(
     listaURLs.map(async (url) => {
       try {
-        const response = await fetch(url)
+        const response = await fetch(url);
         return response.status;
       } catch (erro) {
         return manejaErros(erro);
@@ -20,11 +20,17 @@ async function checaStatus (listaURLs) {
 }
 
 function manejaErros (erro) {
+  let erroTratado = '';
   if (erro.cause.code === 'ENOTFOUND') {
-    return 'link não encontrado';
+    erroTratado = "O link não encontrado";
+  } else if (erro.cause.code === 'ECONNREFUSED') {
+    erroTratado = 'A conexão ao servidor falhou';
+  } else if (erro.cause.code === 'ETIMEDOUT') {
+    erroTratado = 'A requisição demorou para responder';
   } else {
-    return 'ocorreu algum erro';
+    erroTratado = 'ocorreu algum erro';
   }
+  return erroTratado;
 }
 
 export default async function listaValidada (listaDeLinks) {
