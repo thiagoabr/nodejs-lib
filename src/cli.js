@@ -5,47 +5,57 @@ import listaValidada from './http-validacao.js';
 
 const caminho = process.argv;
 
-async function imprimeLista(valida, formato, resultado, identificador = '') {
-  if (valida && !formato) {
-    console.log(
-      chalk.yellow('lista validada'),
-      chalk.black.bgGreen(identificador),
-      await listaValidada(resultado.links),
-      chalk.yellow('Total de Links: ' + resultado.total)); 
-  } else if (formato) {
-    console.log(JSON.stringify(resultado.links));
+async function imprimeLista(valida, resultado, identificador = '', json = false) {
+  const listaFinal = await listaValidada(resultado.links);
+
+  const saidaJSON = {
+    Total: chalk.yellow(resultado.total),
+    links: json ? listaFinal : resultado.links  
+  };
+
+  if (json) {
+    console.log(JSON.stringify(saidaJSON, null, 2));
   } else {
-    console.log(
-      chalk.yellow('lista de links'),
-      chalk.black.bgGreen(identificador),
-      resultado.links,
-      chalk.yellow('Total de Links: ' + resultado.total));
+    if (valida) {
+      console.log(
+        chalk.yellow('Lista validada'),
+        chalk.black.bgGreen(identificador),
+        listaFinal,
+        chalk.black.bgBlueBright('Total de links : ' + resultado.total + '\n')
+      );
+    } else {
+      console.log(
+        chalk.black.bgGreen('Lista de links : ' + identificador),
+        resultado.links,
+        chalk.black.bgYellow('Total de links : ' + resultado.total + '\n')
+      );
+    }
   }
 }
 
 async function processaTexto(argumentos) {
   const caminho = argumentos[2];
   const valida = argumentos[3] === '--valida';
-  const formato = argumentos[4] === '--json';
+  const json = argumentos[4] === '--json';
 
   try {
     fs.lstatSync(caminho);
   } catch (erro) {
     if (erro.code === 'ENOENT') {
-      console.log(chalk.bgRed('arquivo ou diretório não existe'));
+      console.log('arquivo ou diretório não existe');
       return;
     }
   }
 
   if (fs.lstatSync(caminho).isFile()) {
     const resultado = await pegaArquivo(argumentos[2]);
-    imprimeLista(valida, formato, resultado);
+    imprimeLista(valida, resultado, '', json);
   } else if (fs.lstatSync(caminho).isDirectory()) {
-    const arquivos = await fs.promises.readdir(caminho)
+    const arquivos = await fs.promises.readdir(caminho);
     arquivos.forEach(async (nomeDeArquivo) => {
-      const lista = await pegaArquivo(`${caminho}/${nomeDeArquivo}`)
-      imprimeLista(valida, formato, lista, nomeDeArquivo)
-    })
+      const lista = await pegaArquivo(`${caminho}/${nomeDeArquivo}`);
+      imprimeLista(valida, lista, nomeDeArquivo, json);
+    });
   }
 }
 

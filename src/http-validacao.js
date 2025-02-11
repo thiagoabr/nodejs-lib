@@ -1,17 +1,25 @@
 import chalk from "chalk";
 
+let cache = {};
+
 function extraiLinks (arrLinks) {
-  return arrLinks.map((objetoLink) => Object.values(objetoLink).join())
+  return arrLinks.map((objetoLink) => Object.values(objetoLink).join());
 }
 
 async function checaStatus (listaURLs) {
-  const arrStatus = await Promise
-  .all(
+
+  const arrStatus = await Promise.all(
     listaURLs.map(async (url) => {
+      if (cache[url])
+      {
+        return cache[url];
+      }
       try {
         const response = await fetch(url);
+        cache[url] = response.status;
         return response.status;
       } catch (erro) {
+        cache[url] = manejaErros(erro);
         return manejaErros(erro);
       }
     })
@@ -28,9 +36,9 @@ function manejaErros (erro) {
   } else if (erro.cause.code === 'ETIMEDOUT') {
     erroTratado = 'A requisição demorou para responder';
   } else {
-    erroTratado = 'ocorreu algum erro';
+    erroTratado = 'Ocorreu algum erro genérico';
   }
-  return erroTratado;
+  return chalk.red(erroTratado);
 }
 
 export default async function listaValidada (listaDeLinks) {
